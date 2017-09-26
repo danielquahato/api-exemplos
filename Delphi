@@ -1,0 +1,204 @@
+unit Unit1;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IdBaseComponent,
+  IdComponent, IdTCPConnection, IdTCPClient, IdHTTP, Data.DB, RxMemDS,
+  Vcl.Grids, Vcl.DBGrids;
+
+type
+  TForm1 = class(TForm)
+    IdHTTP1: TIdHTTP;
+    Memo1: TMemo;
+    Button1: TButton;
+    Edit1: TEdit;
+    Button2: TButton;
+    DBGrid1: TDBGrid;
+    tbl_aux: TRxMemoryData;
+    ds_aux: TDataSource;
+    tbl_auxTitulo: TStringField;
+    tbl_auxid: TStringField;
+    tbl_auxbanda: TStringField;
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    function Replace: string;
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.Button2Click(Sender: TObject);
+var
+  strm: TStringStream;
+  cont:integer;
+  Titulo, texto, id, banda:string;
+begin
+  IdHTTP1.Request.Clear;
+  IdHTTP1.Request.CustomHeaders.Clear;
+  IdHTTP1.Request.Accept := 'text/html, */*';
+  //IdHTTP1.Request.CustomHeaders.Add
+    //('Authorization: Token token="d44ab227164faed55b0ecb2d2ac48a06"');
+  strm := TStringStream.Create('');
+  try
+    IdHTTP1.Get('https://api.vagalume.com.br/search.excerpt?q='+Edit1.Text+'&limit=10',
+      strm);
+    Memo1.Text := Utf8ToAnsi(strm.DataString);
+    Replace;
+  finally
+    strm.Free;
+  end;
+  texto := Memo1.Text;
+  Memo1.Clear;
+  //extrai titulo da música e URL
+
+  if pos('"docs"', texto) > 0 then
+  begin
+     cont := pos('"docs"', texto);
+     texto := copy(texto, cont+1, length(texto));
+     tbl_aux.Open;
+     tbl_aux.EmptyTable;
+     //
+     while pos('"id"', texto) > 0 do
+     begin
+       if pos('"id"', texto) > 0 then
+       begin
+         cont := pos('"id"', texto);
+         texto := copy(texto, cont+6, length(texto));
+         cont := pos('"', texto);
+         id := copy(texto, 1, cont-1);
+       end;
+       if pos('"title"', texto) > 0 then
+       begin
+         cont := pos('"title"', texto);
+         texto := copy(texto, cont+9, length(texto));
+         cont := pos('"', texto);
+         Titulo := copy(texto, 1, cont-1);
+       end;
+       if pos('"band"', texto) > 0 then
+       begin
+         cont := pos('"band"', texto);
+         texto := copy(texto, cont+8, length(texto));
+         cont := pos('"', texto);
+         banda := copy(texto, 1, cont-1);
+       end;
+       tbl_aux.Insert;
+       tbl_auxid.AsString := id;
+       tbl_auxTitulo.AsString := Titulo;
+       tbl_auxbanda.AsString := banda;
+       tbl_aux.Post;
+     end;
+  end;
+
+end;
+
+function TForm1.Replace: string;
+begin
+  //substitui os caracteres especiais
+  Memo1.Text := StringReplace(Memo1.Text, '\u00e1', 'á', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00e0', 'à', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00e2', 'â', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00e3', 'ã', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00e4', 'ä', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00c1', 'Á', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00c0', 'À', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00c2', 'Â', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00c3', 'Ã', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00c4', 'Ä', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00e9', 'é', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00e8', 'è', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00ea', 'ê', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00ea', 'ê', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00c9', 'É', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00c8', 'È', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00ca', 'Ê', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00cb', 'Ë', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00ed', 'í', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00ec', 'ì', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00ee', 'î', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00ef', 'ï', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00cd', 'Í', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00cc', 'Ì', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00ce', 'Î', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00cf', 'Ï', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00f3', 'ó', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00f2', 'ò', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00f4', 'ô', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00f5', 'õ', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00f6', 'ö', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00d3', 'Ó', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00d2', 'Ò', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00d4', 'Ô', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00d5', 'Õ', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00d6', 'Ö', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00fa', 'ú', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00f9', 'ù', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00fb', 'û', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00fc', 'ü', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00da', 'Ú', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00d9', 'Ù', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00db', 'Û', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00e7', 'ç', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00c7', 'Ç', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00f1', 'ñ', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u00d1', 'Ñ', [rfReplaceAll]);
+  Memo1.Text := StringReplace(Memo1.Text, '\u0026', '&', [rfReplaceAll]);
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  strm: TStringStream;
+  cont:integer;
+  Titulo:string;
+begin
+  IdHTTP1.Request.Clear;
+  IdHTTP1.Request.CustomHeaders.Clear;
+  IdHTTP1.Request.Accept := 'text/html, */*';
+  //IdHTTP1.Request.CustomHeaders.Add
+    //('Authorization: Token token="d44ab227164faed55b0ecb2d2ac48a06"');
+  strm := TStringStream.Create('');
+  try
+    IdHTTP1.Get
+      ('https://api.vagalume.com.br/search.php?musid='+tbl_auxid.AsString+'&apikey={d44ab227164faed55b0ecb2d2ac48a06}',
+      strm);
+    Memo1.Text := Utf8ToAnsi(strm.DataString);
+  finally
+    strm.Free;
+  end;
+  //extrai titulo da música e Letra
+  if pos('"mus"', Memo1.Text) > 0 then
+  begin
+     cont := pos('"mus"', Memo1.Text);
+     Memo1.Text := copy(Memo1.Text, cont+1, length(Memo1.Text));
+     cont := pos('"name"', Memo1.Text);
+     Memo1.Text := copy(Memo1.Text, cont+8, length(Memo1.Text));
+     cont := pos('"', Memo1.Text);
+     Titulo := copy(Memo1.Text, 1, cont-1);
+     cont := pos('"text"', Memo1.Text);
+     Memo1.Text := copy(Memo1.Text, cont+8, length(Memo1.Text));
+     if pos('"translate"', Memo1.Text) > 0 then
+     begin
+       cont := pos('"translate"', Memo1.Text);
+       Memo1.Text := copy(Memo1.Text, 1, cont-3);
+     end
+     else
+     begin
+       cont := pos('"}', Memo1.Text);
+       Memo1.Text := copy(Memo1.Text, 1, cont-1);
+     end;
+     Edit1.Text := Titulo;
+  end;
+  Replace;
+end;
+
+end.
